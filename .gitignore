@@ -19,3 +19,6 @@ Thumbs.db
 
 # Package info
 *.egg-info/
+
+# Claude Code
+.claude/
