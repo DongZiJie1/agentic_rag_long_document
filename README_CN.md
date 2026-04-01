@@ -130,7 +130,6 @@
 ```bash
 # 必需
 - Python 3.8+
-- Java 11+（核心 Agent 服务）
 - Docker & Docker Compose
 ```
 
@@ -270,7 +269,7 @@ state = {
 |------|------|------|
 | **文档解析** | MinerU | 结构提取、公式/表格识别 |
 | **存储 & 搜索** | Elasticsearch | 全文搜索、元数据过滤 |
-| **Agent 运行时** | Java（原生） | 有状态循环、工具编排 |
+| **Agent 运行时** | Python | 有状态循环、工具编排 |
 | **LLM 接口** | Python + vLLM | 模型服务、API 网关 |
 | **多 Agent 协调** | 线程 + 文件消息总线 | 并行执行、P2P 通信 |
 

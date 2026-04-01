@@ -132,7 +132,6 @@ This is **Agentic RAG** — RAG that thinks before it retrieves.
 ```bash
 # Required
 - Python 3.8+
-- Java 11+ (for core Agent service)
 - Docker & Docker Compose
 ```
 
@@ -272,7 +271,7 @@ State tracking + error correction loops enable reliable operation with cost-effe
 |-----------|-----------|---------|
 | **Document Parsing** | MinerU | Structure extraction, formula/table recognition |
 | **Storage & Search** | Elasticsearch | Full-text search, metadata filtering |
-| **Agent Runtime** | Java (native) | Stateful loop, tool orchestration |
+| **Agent Runtime** | Python | Stateful loop, tool orchestration |
 | **LLM Interface** | Python + vLLM | Model serving, API gateway |
 | **Multi-Agent Coordination** | Threading + File-based MessageBus | Parallel execution, P2P communication |
 
