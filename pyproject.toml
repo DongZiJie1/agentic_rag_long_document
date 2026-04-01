@@ -1,9 +1,25 @@
 [project]
 name = "agentic-rag-long-document"
 version = "0.1.0"
-description = "Add your description here"
+description = "Agentic RAG system for long document Q&A and cross-document analysis"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
-    "magic-pdf>=1.3.12",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "anthropic>=0.18.0",
+    "openai>=1.12.0",
+    "elasticsearch>=8.12.0",
+    "sentence-transformers>=2.3.0",
+    "magic-pdf>=0.6.0",
+    "numpy>=1.26.0",
+    "aiofiles>=23.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "hypothesis>=6.98.0",
 ]
