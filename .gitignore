@@ -5,7 +5,7 @@ __pycache__/
 *.so
 .Python
 *.pyc
-
+*.xml
 # Virtual environments
 .venv/
 
@@ -20,8 +20,17 @@ Thumbs.db
 # Package info
 *.egg-info/
 
+# IDE
+.idea/
+
 # Claude Code
 .claude/
 
 # Kiro
 .kiro/
+
+# Environment variables
+.env
+
+# Data directories
+data/
