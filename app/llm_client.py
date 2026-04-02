@@ -7,7 +7,7 @@ class LLMClient(ABC):
     """Abstract LLM client interface"""
 
     @abstractmethod
-    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> str:
+    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> Any:
         """
         Generate completion from LLM
 
@@ -16,7 +16,7 @@ class LLMClient(ABC):
             tools: Optional list of tool definitions
 
         Returns:
-            Raw LLM response text
+            LLM response (包含 text 和 tool_calls 等信息)
         """
         pass
 
@@ -29,7 +29,7 @@ class ClaudeClient(LLMClient):
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
 
-    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> str:
+    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> Any:
         """Call Claude API"""
         kwargs: dict[str, Any] = {
             "model": self.model,
@@ -41,14 +41,7 @@ class ClaudeClient(LLMClient):
             kwargs["tools"] = tools
 
         response = self.client.messages.create(**kwargs)
-
-        # Extract text content from response
-        if response.content:
-            for block in response.content:
-                if hasattr(block, 'text'):
-                    return block.text
-
-        return ""
+        return response  # 返回完整响应对象，包含 content 和 tool_use
 
 
 class VLLMClient(LLMClient):
@@ -62,7 +55,7 @@ class VLLMClient(LLMClient):
         )
         self.model = model
 
-    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> str:
+    def complete(self, messages: list[dict], tools: list[dict] | None = None) -> Any:
         """Call vLLM via OpenAI-compatible API"""
         kwargs: dict[str, Any] = {
             "model": self.model,
@@ -74,8 +67,4 @@ class VLLMClient(LLMClient):
             kwargs["tools"] = tools
 
         response = self.client.chat.completions.create(**kwargs)
-
-        if response.choices:
-            return response.choices[0].message.content or ""
-
-        return ""
+        return response  # 返回完整响应对象，包含 choices 和 tool_calls
