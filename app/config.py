@@ -56,12 +56,23 @@ class EmbeddingConfig:
 @dataclass
 class MinerUConfig:
     """MinerU document parser configuration"""
-    model_path: str | None = None
-    
+    api_url: str = "http://localhost:8000"
+    backend: str = "pipeline"
+    parse_method: str = "auto"
+    lang_list: str = "ch"
+    return_md: bool = True
+    return_middle_json: bool = True
+    timeout: int = 300
+
     @classmethod
     def from_env(cls) -> "MinerUConfig":
         return cls(
-            model_path=os.getenv("MINERU_MODEL_PATH")
+            api_url=os.getenv("MINERU_API_URL", "http://localhost:8000"),
+            backend=os.getenv("MINERU_BACKEND", "pipeline"),
+            parse_method=os.getenv("MINERU_PARSE_METHOD", "auto"),
+            lang_list=os.getenv("MINERU_LANG_LIST", "ch"),
+            return_md=os.getenv("MINERU_RETURN_MD", "true").lower() == "true",
+            timeout=int(os.getenv("MINERU_TIMEOUT", "300")),
         )
 
 
