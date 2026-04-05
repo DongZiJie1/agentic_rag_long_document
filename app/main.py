@@ -78,10 +78,27 @@ async def parse_document(
             parse_method=parse_method,
             lang_list=lang_list,
             return_md=return_md,
+            return_middle_json=True,
         )
     except MinerUParseError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="Uploaded file lost unexpectedly")
 
-    return JSONResponse(content={"doc_id": doc_id, "filename": file.filename, **result})
+    # Build section tree from middle_json
+    outline = None
+    middle_json = result.get("middle_json")
+    if middle_json:
+        from app.section_parser import SectionTreeBuilder
+
+        tree = SectionTreeBuilder.from_middle_json(middle_json)
+        tree.build_tree()
+        outline = tree.to_dict()
+
+    return JSONResponse(content={
+        "doc_id": doc_id,
+        "filename": file.filename,
+        "md_content": result.get("md_content", result.get("markdown", "")),
+        "content_list": result.get("content_list", []),
+        "outline": outline,
+    })

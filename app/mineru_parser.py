@@ -6,6 +6,7 @@ from typing import Literal
 import httpx
 
 from app.config import MinerUConfig
+from app.section_parser import SectionTreeBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class MinerUParser:
         self.parse_method = config.parse_method
         self.lang_list = config.lang_list
         self.return_md = config.return_md
+        self.return_middle_json = config.return_middle_json
         self.timeout = config.timeout
 
     # ------------------------------------------------------------------
@@ -45,6 +47,7 @@ class MinerUParser:
         parse_method: Literal["ocr", "txt", "auto"] | None = None,
         lang_list: str | None = None,
         return_md: bool | None = None,
+        return_middle_json: bool | None = None,
     ) -> dict:
         """Parse a PDF file via the MinerU ``/file_parse`` endpoint.
 
@@ -53,6 +56,7 @@ class MinerUParser:
             parse_method: ``"ocr"`` | ``"txt"`` | ``"auto"`` (default from config).
             lang_list: Language hint, e.g. ``"ch"`` for Chinese.
             return_md: Whether to request Markdown output.
+            return_middle_json: Whether to request middle_json output.
 
         Returns:
             Parsed JSON response from MinerU.
@@ -71,6 +75,9 @@ class MinerUParser:
             "parse_method": parse_method or self.parse_method,
             "lang_list": lang_list or self.lang_list,
             "return_md": str(return_md if return_md is not None else self.return_md).lower(),
+            "return_middle_json": str(
+                return_middle_json if return_middle_json is not None else self.return_middle_json
+            ).lower(),
         }
 
         logger.info("MinerU parse request: %s %s", url, data)
@@ -104,3 +111,21 @@ class MinerUParser:
         """Parse a PDF and return the structured content list."""
         result = self.parse_pdf(file_path, **kwargs)
         return result.get("content_list", [])
+
+    def extract_section_tree(self, file_path: str | Path, **kwargs) -> SectionTreeBuilder:
+        """Parse a PDF and return a SectionTreeBuilder with the hierarchical outline.
+
+        Calls MinerU with ``return_middle_json=True``, then builds the section tree
+        from the returned middle_json data.
+        """
+        result = self.parse_pdf(file_path, return_middle_json=True, **kwargs)
+
+        middle_json = result.get("middle_json")
+        if not middle_json:
+            logger.warning("MinerU response missing middle_json for %s", file_path)
+            # Return an empty tree so callers don't have to handle None
+            return SectionTreeBuilder({"pdf_info": []}).build_tree()
+
+        tree = SectionTreeBuilder.from_middle_json(middle_json)
+        tree.build_tree()
+        return tree
