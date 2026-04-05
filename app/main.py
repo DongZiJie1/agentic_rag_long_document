@@ -155,10 +155,10 @@ async def get_section_children(doc_id: str, section_id: str, is_recursive: bool 
 
 
 @app.get("/documents/{doc_id}/sections/{section_id}/content")
-async def get_section_content(doc_id: str, section_id: str):
-    """查某个章节下的内容"""
+async def get_section_content(doc_id: str, section_id: str, is_recursive: bool = False):
+    """查某个章节下的内容。is_recursive=true 时包含所有子孙章节的内容。"""
     try:
-        content = es_client.get_section_content(doc_id, section_id)
+        content = es_client.get_section_content(doc_id, section_id, is_recursive=is_recursive)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     return {"doc_id": doc_id, "section_id": section_id, "content": content}

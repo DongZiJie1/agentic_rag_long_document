@@ -309,23 +309,74 @@ class ElasticsearchClient:
         result.sort(key=lambda x: x.get("line_number", 0))
         return result
 
-    def get_section_content(self, doc_id: str, section_id: str) -> list[dict]:
+    def get_section_content(self, doc_id: str, section_id: str,
+                            is_recursive: bool = False) -> list[dict]:
         """
-        查某个章节下的所有内容块（按 chunk_index 排序），不含标题本身。
+        查某个章节下的内容（标题+chunk），按 line_number 排序。
+
+        is_recursive=False: 只查当前章节
+        is_recursive=True:  查当前章节 + 所有子孙章节
         """
+        if not is_recursive:
+            resp = self.client.search(
+                index=self.index_name,
+                query={
+                    "bool": {
+                        "must": [
+                            {"term": {"doc_id": doc_id}},
+                            {"term": {"section_id": section_id}},
+                            {"terms": {"type": ["title", "chunk"]}},
+                        ]
+                    }
+                },
+                sort=[{"line_number": "asc"}],
+                size=100,
+            )
+            return [hit["_source"] for hit in resp["hits"]["hits"]]
+
+        # 递归模式：先拿到所有子孙 section_id
+        titles_resp = self.client.search(
+            index=self.index_name,
+            query={
+                "bool": {
+                    "must": [
+                        {"term": {"doc_id": doc_id}},
+                        {"term": {"type": "title"}},
+                    ]
+                }
+            },
+            _source=["section_id", "parent_id"],
+            size=500,
+        )
+        all_titles = [hit["_source"] for hit in titles_resp["hits"]["hits"]]
+
+        # BFS 收集所有子孙 section_id（含自身）
+        children_map: dict[str, list[str]] = {}
+        for t in all_titles:
+            pid = t.get("parent_id") or ""
+            children_map.setdefault(pid, []).append(t["section_id"])
+
+        descendant_ids = [section_id]
+        queue = list(children_map.get(section_id, []))
+        while queue:
+            sid = queue.pop(0)
+            descendant_ids.append(sid)
+            queue.extend(children_map.get(sid, []))
+
+        # 查这些 section 下的标题+chunk
         resp = self.client.search(
             index=self.index_name,
             query={
                 "bool": {
                     "must": [
                         {"term": {"doc_id": doc_id}},
-                        {"term": {"section_id": section_id}},
-                        {"term": {"type": "chunk"}},
+                        {"terms": {"type": ["title", "chunk"]}},
+                        {"terms": {"section_id": descendant_ids}},
                     ]
                 }
             },
-            sort=[{"chunk_index": "asc"}],
-            size=100,
+            sort=[{"line_number": "asc"}],
+            size=500,
         )
         return [hit["_source"] for hit in resp["hits"]["hits"]]
 
