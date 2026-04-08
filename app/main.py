@@ -172,3 +172,26 @@ async def search_document(doc_id: str, keyword: str, size: int = 5):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     return {"doc_id": doc_id, "keyword": keyword, "results": results}
+
+
+# ── Agent 问答 ────────────────────────────────────────────────
+
+@app.post("/agent/ask")
+async def agent_ask(
+    doc_id: str = Form(...),
+    question: str = Form(...),
+    max_steps: int = Form(default=5),
+):
+    """基于 LangGraph agent 的单文档问答。
+
+    Agent 会自动搜索、阅读章节并生成答案。
+    """
+    # TODO: implement agent logic
+    return {
+        "doc_id": doc_id,
+        "question": question,
+        "answer": "",
+        "sources": [],
+        "steps": [],
+        "action_log": [],
+    }
