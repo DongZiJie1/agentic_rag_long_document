@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from app.config import AppConfig
 from app.mineru_parser import MinerUParser, MinerUParseError
 from app.elasticsearch_client import ElasticsearchClient
+from app.llm_client import create_llm
 
 logger = logging.getLogger(__name__)
 
@@ -181,17 +182,33 @@ async def agent_ask(
     doc_id: str = Form(...),
     question: str = Form(...),
     max_steps: int = Form(default=5),
+    model_name: str = Form(default=None)
 ):
     """基于 LangGraph agent 的单文档问答。
 
     Agent 会自动搜索、阅读章节并生成答案。
     """
-    # TODO: implement agent logic
+    from app.agent import run_agent
+
+    llm = create_llm(config.llm, model_name=model_name)
+
+    try:
+        result = run_agent(
+            doc_id=doc_id,
+            question=question,
+            llm=llm,
+            es=es_client,
+            max_steps=max_steps,
+        )
+    except Exception as exc:
+        logger.exception("Agent execution failed")
+        raise HTTPException(status_code=500, detail=str(exc))
+
     return {
         "doc_id": doc_id,
         "question": question,
-        "answer": "",
-        "sources": [],
-        "steps": [],
-        "action_log": [],
+        "answer": result.answer,
+        "sources": result.sources,
+        "steps": result.steps,
+        "action_log": result.action_log,
     }

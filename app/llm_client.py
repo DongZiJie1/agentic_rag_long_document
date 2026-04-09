@@ -1,6 +1,8 @@
 """LLM client abstraction layer"""
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable
+
+from app.config import LLMConfig
 
 
 class LLMClient(ABC):
@@ -68,3 +70,34 @@ class VLLMClient(LLMClient):
 
         response = self.client.chat.completions.create(**kwargs)
         return response  # 返回完整响应对象，包含 choices 和 tool_calls
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  Factory —— 根据配置创建 LLM 客户端
+# ══════════════════════════════════════════════════════════════════════════
+
+def _build_claude(config: LLMConfig, model_name: str | None) -> ClaudeClient:
+    return ClaudeClient(
+        api_key=config.anthropic_api_key,
+        model=model_name or config.model_name or "claude-3-5-sonnet-20241022",
+    )
+
+def _build_vllm(config: LLMConfig, model_name: str | None) -> VLLMClient:
+    return VLLMClient(
+        base_url=config.vllm_base_url,
+        model=model_name or config.model_name or "Qwen2.5-7B-Instruct",
+        api_key=config.vllm_api_key or "EMPTY",
+    )
+
+_LLM_BUILDERS: dict[str, Callable[[LLMConfig, str | None], LLMClient]] = {
+    "claude": _build_claude,
+    "vllm": _build_vllm,
+}
+
+
+def create_llm(config: LLMConfig, model_name: str | None = None) -> LLMClient:
+    """根据配置创建 LLM 客户端。model_name 可选，不传则用配置默认值。"""
+    builder = _LLM_BUILDERS.get(config.backend)
+    if not builder:
+        raise ValueError(f"不支持的 LLM 后端: {config.backend}，可选: {list(_LLM_BUILDERS.keys())}")
+    return builder(config, model_name)
